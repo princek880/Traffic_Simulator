@@ -38,8 +38,17 @@ class Junction:
         self.out_roads = {}
         self.node_id = node_id
         self.router = router
+        self.process_interval = 30
+        self.cooldown = 0
+
+    def step(self):
+        if self.cooldown > 0:
+            self.cooldown -= 1
 
     def receive(self, vehicle):
+        if self.cooldown > 0:
+            return False
+            
         if self.router is None or self.node_id is None:
             return False
             
@@ -50,7 +59,10 @@ class Junction:
             
         target_road = self.out_roads.get(next_hop)
         if target_road:
-            return target_road.receive(vehicle)
+            success = target_road.receive(vehicle)
+            if success:
+                self.cooldown = self.process_interval
+            return success
         return False
 
 class Vehicle:
@@ -68,7 +80,7 @@ class Source:
         self.next_element = None
         self.spawn_timer = 0
         self.interval = max(1, 60 // rate) if rate > 0 else float('inf')
-        self.color_map = color_map # Reference to GUIBuilder.dest_colors
+        self.color_map = color_map 
 
     def step(self):
         if not self.next_element or self.rate <= 0: 
@@ -77,7 +89,6 @@ class Source:
         self.spawn_timer += 1
         if self.spawn_timer >= self.interval:
             dest = random.choice(self.sink_list)
-            # Retrieve color from map; default to gray if not found
             color = self.color_map.get(dest, (100, 100, 100)) if self.color_map else (100, 100, 100)
             new_veh = Vehicle(dest, color)
             self.next_element.receive(new_veh)

@@ -131,17 +131,14 @@ class GUIBuilder:
         self.router = CentralizedRouting(self.nodes, [(u, v) for u, v, _ in self.roads_data])
         self.router.update_weights()
 
-        # First, identify Sinks to populate dest_colors
         for nid, ntype in self.node_types.items():
             if ntype == "Sink":
                 self.elements[nid] = Sink(self.nodes[nid])
                 self.sinks.append(nid)
                 self.dest_colors[nid] = (random.randint(50,200), random.randint(50,200), random.randint(50,200))
 
-        # Then, initialize Sources with the color_map reference
         for nid, ntype in self.node_types.items():
             if ntype == "Source":
-                # Pass self.dest_colors here
                 obj = Source(rate=self.node_rates[nid], sink_list=self.sinks, coords=self.nodes[nid], color_map=self.dest_colors)
                 self.elements[nid] = obj
                 self.sources.append(obj)
@@ -164,9 +161,12 @@ class GUIBuilder:
 
     def update_sim(self):
         for s in self.sources:
-            s.step() # Use the Source class internal timer
+            s.step() 
         for r in self.roads:
-            r.step()
+            r.step() 
+        for eid, elem in self.elements.items():
+            if isinstance(elem, Junction):
+                elem.step()
 
     def draw_builder(self):
         hud_text = [
@@ -210,11 +210,26 @@ class GUIBuilder:
         for r in self.roads:
             p1, p2 = self.get_offset_points(self.nodes[r.e1], self.nodes[r.e2], 6)
             pygame.draw.line(self.screen, (200, 200, 200), p1, p2, 8)
+            
+            # Draw moving vehicles
             for v, progress in r.veh_on_road:
                 ratio = progress / r.length
                 x = p1[0] + (p2[0]-p1[0])*ratio
                 y = p1[1] + (p2[1]-p1[1])*ratio
                 pygame.draw.circle(self.screen, v.color, (int(x), int(y)), 5)
+            
+            for i, v in enumerate(r.vqueue):
+                offset_distance = 10 + (i * 10)
+                dx = p1[0] - p2[0]
+                dy = p1[1] - p2[1]
+                dist = math.hypot(dx, dy)
+                if dist > 0:
+                    nx, ny = dx/dist, dy/dist
+                    x = p2[0] + nx * offset_distance
+                    y = p2[1] + ny * offset_distance
+                    pygame.draw.circle(self.screen, v.color, (int(x), int(y)), 5)
+                    pygame.draw.circle(self.screen, (0, 0, 0), (int(x), int(y)), 5, 1) 
+
                 
         for nid, pos in self.nodes.items():
             type_str = self.node_types[nid]
