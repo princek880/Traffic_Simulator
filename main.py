@@ -131,16 +131,21 @@ class GUIBuilder:
         self.router = CentralizedRouting(self.nodes, [(u, v) for u, v, _ in self.roads_data])
         self.router.update_weights()
 
+        # First, identify Sinks to populate dest_colors
         for nid, ntype in self.node_types.items():
-            if ntype == "Source":
-                obj = Source(rate=self.node_rates[nid], sink_list=[], coords=self.nodes[nid])
-                self.elements[nid] = obj
-                self.sources.append(obj)
-            elif ntype == "Sink":
+            if ntype == "Sink":
                 self.elements[nid] = Sink(self.nodes[nid])
                 self.sinks.append(nid)
                 self.dest_colors[nid] = (random.randint(50,200), random.randint(50,200), random.randint(50,200))
-            else:
+
+        # Then, initialize Sources with the color_map reference
+        for nid, ntype in self.node_types.items():
+            if ntype == "Source":
+                # Pass self.dest_colors here
+                obj = Source(rate=self.node_rates[nid], sink_list=self.sinks, coords=self.nodes[nid], color_map=self.dest_colors)
+                self.elements[nid] = obj
+                self.sources.append(obj)
+            elif ntype == "Junction":
                 self.elements[nid] = Junction(self.nodes[nid], node_id=nid, router=self.router)
 
         for s in self.sources:
@@ -159,14 +164,9 @@ class GUIBuilder:
 
     def update_sim(self):
         for s in self.sources:
-            if random.random() < (s.rate / 10.0):
-                if s.sink_list:
-                    dest = random.choice(s.sink_list)
-                    v = Vehicle(dest, self.dest_colors[dest])
-                    if s.next_element:
-                        s.next_element.receive(v) 
+            s.step() # Use the Source class internal timer
         for r in self.roads:
-            r.step() 
+            r.step()
 
     def draw_builder(self):
         hud_text = [

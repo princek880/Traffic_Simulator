@@ -20,6 +20,8 @@ class CentralizedRouting:
                 w = math.sqrt((x2-x1)**2 + (y2-y1)**2)
             self.adj[u][v] = self.adj[v][u] = w
         self.dirty = False
+        
+    
 
     def _compute_source(self, src):
         distances = {n: float('inf') for n in self.adj}

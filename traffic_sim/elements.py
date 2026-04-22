@@ -61,13 +61,14 @@ class Vehicle:
 
 
 class Source:
-    def __init__(self, rate, sink_list, coords):
+    def __init__(self, rate, sink_list, coords, color_map=None):
         self.rate = rate
         self.sink_list = sink_list
         self.coords = coords
         self.next_element = None
         self.spawn_timer = 0
         self.interval = max(1, 60 // rate) if rate > 0 else float('inf')
+        self.color_map = color_map # Reference to GUIBuilder.dest_colors
 
     def step(self):
         if not self.next_element or self.rate <= 0: 
@@ -75,7 +76,10 @@ class Source:
             
         self.spawn_timer += 1
         if self.spawn_timer >= self.interval:
-            new_veh = Vehicle(random.choice(self.sink_list))
+            dest = random.choice(self.sink_list)
+            # Retrieve color from map; default to gray if not found
+            color = self.color_map.get(dest, (100, 100, 100)) if self.color_map else (100, 100, 100)
+            new_veh = Vehicle(dest, color)
             self.next_element.receive(new_veh)
             self.spawn_timer = 0
 
