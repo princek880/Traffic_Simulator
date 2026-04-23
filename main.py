@@ -162,6 +162,7 @@ class GUIBuilder:
     def update_sim(self):
         for s in self.sources:
             s.step() 
+        random.shuffle(self.roads)
         for r in self.roads:
             r.step() 
         for eid, elem in self.elements.items():
