@@ -17,7 +17,7 @@ Pygame-based traffic routing simulation demonstrating capacity-constrained netwo
 ## Execution
 ```bash
 pip install pygame
-python traffic_sim.py
+python main.py
 ```
 
 ## UI Controls
